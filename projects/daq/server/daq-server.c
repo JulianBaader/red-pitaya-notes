@@ -29,6 +29,21 @@ int active_thread = 0;
 
 void *pulser_handler(void *arg);
 
+
+//added daq variables
+int daq_count = 0;
+int drain_daq = 0;
+int active_daq_thread = 0;
+void *daq_handler(void *arg);
+
+//moved to global
+uint32_t pre,start,tot;
+volatile void *cfg;
+int sock_client;
+void *ram;
+volatile uint16_t *rst;
+
+
 static inline int lower_bound(int64_t *array, int size, int value)
 {
   int i = 0, j = size, k;
@@ -43,18 +58,22 @@ static inline int lower_bound(int64_t *array, int size, int value)
 
 int main(int argc, char *argv[])
 {
-  int i, fd, sock_server, sock_client;
+  int i, fd, sock_server;
+  //int sock_client;
   struct sched_param param;
   pthread_attr_t attr;
-  pthread_t thread;
-  volatile void *cfg;
-  void *ram, *buf;
-  volatile uint16_t *iir_params, *rst;
+  pthread_t pulser_thread, daq_thread;
+  //volatile void *cfg;
+  void *buf;
+  //void *ram;
+  volatile uint16_t *iir_params;
+  //volatile uint16_t *rst;
   volatile int16_t *iir_limits;
   volatile uint32_t *hst[2];
   struct sockaddr_in addr;
   int yes = 1;
-  uint32_t start, pre, tot, size;
+  uint32_t size;
+  //uint32_t pre, start, tot;
   uint64_t command, data;
   uint8_t code, chan;
   uint16_t fall, rise, f, r, s;
@@ -106,10 +125,18 @@ int main(int argc, char *argv[])
   rst[0] |= 0x0303;
 
   /* reset oscilloscope */
+  rst[1] &= ~0x0003;
+  rst[1] |= 0x0003;
+
+  //I am confused about this since the above seems to work just fine
+  /* 
+
   rst[1] &= ~0x0001;
   usleep(100);
   rst[1] &= ~0x0002;
   rst[1] |= 0x0003;
+  
+  */
 
   /* set trigger channel */
   rst[1] &= ~0x0004;
@@ -208,9 +235,7 @@ int main(int argc, char *argv[])
       else if(code == 2)
       {
         /* reset oscilloscope */
-        rst[1] &= ~0x0001;
-        usleep(100);
-        rst[1] &= ~0x0002;
+        rst[1] &= ~0x0003;
         rst[1] |= 0x0003;
       }
       else if(code == 3)
@@ -525,12 +550,12 @@ int main(int argc, char *argv[])
 
         enable_thread = 1;
         active_thread = 1;
-        if(pthread_create(&thread, &attr, pulser_handler, NULL) < 0)
+        if(pthread_create(&pulser_thread, &attr, pulser_handler, NULL) < 0)
         {
           perror("pthread_create");
           return EXIT_FAILURE;
         }
-        pthread_detach(thread);
+        pthread_detach(pulser_thread);
       }
       else if(code == 30)
       {
@@ -540,6 +565,22 @@ int main(int argc, char *argv[])
         /* reset generator */
         rst[1] &= ~0x8000;
         rst[1] |= 0x8000;
+      }
+      else if(code == 31)
+      {
+        /* start daq*/
+	      daq_count += data;
+
+        if(active_daq_thread == 0)
+        {
+          active_daq_thread = 1;
+          if(pthread_create(&daq_thread, &attr, daq_handler, NULL) < 0)
+          {
+            perror("pthread_create");
+            return EXIT_FAILURE;
+          }
+          pthread_detach(daq_thread);
+        }
       }
     }
 
@@ -588,5 +629,41 @@ void *pulser_handler(void *arg)
 
   active_thread = 0;
 
+  return NULL;
+}
+
+
+void *daq_handler(void *arg)
+{
+  while(daq_count>0)
+  {
+    uint8_t trigger_byte = ((uint8_t *)sts)[32];
+    if ((trigger_byte % 2 == 0) || drain_daq) // trigger_byte is even once a trigger event was recorded. If drain_daq just write the data to the socket
+    {
+      // read oscilloscope data 
+      pre = *(uint32_t *)(cfg + 76) + 1;
+      tot = *(uint32_t *)(cfg + 80) + 1; //das müsste einmal reichen
+      start = *(uint32_t *)(sts + 32) >> 1;
+      start = (start - pre) & 0x007FFFFF;
+      if(start + tot <= 0x007FFFFF)
+      {
+        if(send(sock_client, ram + start * 4, tot * 4, MSG_NOSIGNAL) < 0) break;
+      }
+      else
+      {
+        if(send(sock_client, ram + start * 4, (0x007FFFFF - start) * 4, MSG_NOSIGNAL) < 0) break;
+        if(send(sock_client, ram, (start + tot - 0x007FFFFF) * 4, MSG_NOSIGNAL) < 0) break;
+      }
+      // reset oscilloscope 
+      rst[1] &= ~0x0003;
+      rst[1] |= 0x0003;
+      // start oscilloscope
+      rst[1] |= 0x0020;
+      rst[1] &= ~0x0020;
+      daq_count--;
+    }
+  }
+  active_daq_thread = 0;
+  drain_daq = 0;
   return NULL;
 }
