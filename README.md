@@ -2,9 +2,9 @@
 
 Download the SD card image zip file according to https://pavel-demin.github.io/red-pitaya-notes/alpine/
 
-Replace SD/apps/index.html with repo/alpine/apps/index.html
+Replace `SD/apps/index.html` with `repo/alpine/apps/index.html`
 
-Create a SD/apps/daq folder and copy the contents of repo/projects/daq/app and repo/projects/daq/server into it.
+Create a `SD/apps/daq folder` and copy the contents of `repo/projects/daq/app` and `repo/projects/daq/server` into it.
 
 Insert the SD Card into the RP and connect it via ethernet.
 
@@ -18,7 +18,9 @@ Install some packages:
 
 `lbu commit -d`
 
-Navigate to SSH/apps/daq and run the Makefile.
+Navigate to `SSH/apps/daq` and run the Makefile. `make`
+
+
 Make the SD card read only `ro`.
 
 # Acquiring data
@@ -26,7 +28,7 @@ Connect IN1 to OUT1.
 
 Start the server via SSH `./start.sh` or the browser.
 
-Navigate to repo/projects/daq/client.
+Navigate to `repo/projects/daq/client`.
 
 To save one set of oscilloscope data to a npy file run 
 
