@@ -49,7 +49,7 @@ MIN_ADC_VALUE = -4096
 MAX_ADC_VALUE = 4095
 NUMBER_OF_GENERATOR_BINS = 4096
 DISTRIBUTIONS = {"uniform": 0, "poisson": 1}
-ACQUISITION_MODES = ['time', 'loops', 'infinite']
+ACQUISITION_MODES = ['save', 'process']
 
 PORT = 1001
 
@@ -217,7 +217,7 @@ class rpControll:
     def start_oscillocsope(self):
         self.command(19, 0, 0)
         
-    def acquire(self, amount):
+    def acquire_set(self, amount):
         buffer = np.zeros(amount*2*self.total_number_of_samples, dtype=np.int16)
         view = buffer.view(np.uint8)
         reshaped = buffer.reshape((2, self.total_number_of_samples, amount), order='F').transpose((2, 0, 1))
@@ -236,9 +236,29 @@ class rpControll:
             
         return reshaped
     
+    def acquire_single(self, set_size):
+        while True:
+            buffer = np.zeros(2*self.total_number_of_samples, dtype=np.int16)
+            view = buffer.view(np.uint8)
+            reshaped = buffer.reshape((2, self.total_number_of_samples), order='F')
+            self.command(31, 0, set_size)
+            for i in range(set_size):
+                bytes_received = 0
+                while bytes_received < self.osc_bytes:
+                    bytes_received += self.socket.recv_into(view[bytes_received:], 
+                                                            self.osc_bytes - bytes_received)
+                    
+                bytes_received = 0
+                while bytes_received < self.cut_bytes:
+                    bytes_received += self.socket.recv_into(self.cut_view[bytes_received:],
+                                                            self.cut_bytes - bytes_received)
+            
+                yield reshaped.copy()
+            
+        
     
-    def testing_setup(self):
-        self.connect("rp-f0c38f.local")
+    def testing_setup(self, ip):
+        self.connect(ip)
         self.set_sample_rate(4)
         self.set_negator(0, "IN1")
         self.set_negator(0, "IN2")
@@ -265,17 +285,49 @@ class rpControll:
         
 
     
-    
-    
+
+
 if __name__ == "__main__":
-    amount = 1000
+    import argparse
+    parser = argparse.ArgumentParser(description='Run the DAQ')
+    # Required positional arguments
+    parser.add_argument('ip', type=str, help='IP address of the Red Pitaya')
+    parser.add_argument('mode', type=str, help='Acquisition mode', choices=ACQUISITION_MODES)
+
+    # Optional arguments
+    parser.add_argument('--set_size', type=int, help='Size of one dataset to be acquired', default=1000)
+    parser.add_argument('--sets', type=int, help='Amount of sets to acquire if mode is "process"', default=10)
+    args = parser.parse_args()
+    
+    print(f"Connecting to Red Pitaya at {args.ip}")
     
     rp = rpControll()
-    rp.testing_setup()
-    start_time = time.time()
-    start = time.time()
-    np.save("data.npy", rp.acquire(amount))
-    stop_time = time.time()
+    rp.testing_setup(args.ip)
     
-    
-    print(f"Acquired {amount} sets at an average rate of {amount/(stop_time-start_time)} Hz")
+    if args.mode == 'save':
+        print("Starting acquisition")
+        start_time = time.time()
+        np.save("data.npy", rp.acquire_set(args.set_size))
+        stop_time = time.time()
+        
+        print(f"Acquired {args.set_size} events at an average rate of {args.set_size/(stop_time-start_time)} Hz")
+        
+    elif args.mode == 'process':
+        print("Starting processing")
+        import matplotlib.pyplot as plt
+        
+        hist=np.zeros(2**13)
+        total_sets = args.set_size*args.sets
+        
+        generator = rp.acquire_single(1000)
+        
+        start_time = time.time()
+        for i in range(total_sets):
+            hist[np.max(next(generator)[0])]+=1
+        np.save("hist.npy", hist)
+        stop_time = time.time()
+        print(f"Acquired {total_sets} events at an average rate of {total_sets/(stop_time-start_time)} Hz")
+        
+        plt.plot(hist)
+        plt.show()
+        

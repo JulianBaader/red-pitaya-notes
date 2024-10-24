@@ -25,11 +25,24 @@ Make the SD card read only `ro`.
 Connect IN1 to OUT1.
 
 Start the server via SSH `./start.sh` or the browser.
-Open the repo/projects/daq/client/daq.py file, edit the IP adress (near the end of the file).
 
-After running the script a "data.npy" file is created which contains the recorded events.
+Navigate to repo/projects/daq/client.
 
-The array can be accessed by [event][channel][sample].
+To save one set of oscilloscope data to a npy file run 
+
+`python daq.py <ip> save`
+
+To process multiple sets of the oscilloscope data (a simple histogram of the maxima is created) run
+
+`python daq.py <ip> process`
+
+The set size and number of sets can be edited.
+
+`python daq.py <ip> <mode> --set_size=<set_size> --sets=<number of sets>`
+
+The saved array can be accessed by [event][channel][sample].
+
+The array to be processed can be accessed by [channel][sample].
 
 The function "testing_setup" can be edited to allow for different configurations.
 
