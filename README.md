@@ -4,7 +4,7 @@ You can either follow *Updating the Image* or *Copying the Image*
 ## Copying the Image:
 Unpack the `RP_Image.tar.gz` file and copy it's contents onto the SD card.
 
-Insert the SD card into the RP and power it. Once the blue LED is on the server is ready.
+Insert the SD card into the RP and power it.
 
 ## Updating the Image:
 
@@ -34,7 +34,9 @@ Make the SD card read only `ro`.
 # Acquiring data
 Connect IN1 to OUT1.
 
-Start the server via SSH `./start.sh` or the browser.
+Start the server:
+- If you followed Updating the Image, you can do that by running the `SSH/apps/daq/start.sh` script or by the browser.
+- If you copied the Image from this repo, the server will start automatically and is ready once the blue LED is on.
 
 Navigate to `repo/projects/daq/client`.
 
