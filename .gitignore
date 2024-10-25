@@ -10,3 +10,4 @@ tmp
 uImage
 .vscode
 .Xil
+!RP_Image.tar.gz
