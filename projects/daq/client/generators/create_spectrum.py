@@ -13,19 +13,19 @@ for mode in modes:
     if mode == 'comb':
         for i in range(16):
             s[(i + 1) * 250 - 1] = 1
-            
+
     elif mode == 'single':
         s[2047] = 1
 
     elif mode == 'gauss':
-        s = norm.pdf(x,LEN/2 , 100)
+        s = norm.pdf(x, LEN / 2, 100)
         s = s / np.max(s) * 1000
         s = s.astype(np.uint32)
-        
+
     elif mode == 'constant':
         s = np.ones(LEN, dtype=np.uint32) * 1000
-        
+
     plt.plot(s)
     plt.title(mode)
     plt.show()
-    np.save(mode +'.npy', s)
+    np.save(mode + '.npy', s)
