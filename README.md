@@ -74,6 +74,8 @@ We are planning on using MimoCoRB https://github.com/GuenterQuast/mimoCoRB as a 
 
 Different Modes can be implemented (i.e. setting a fixed acquisition time/number)
 
+Currently it is not possible to deal with cases where the Oscilloscope is not triggered and an Connection Timeout Error is thrown.
+
 
 
 
