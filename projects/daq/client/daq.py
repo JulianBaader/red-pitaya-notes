@@ -80,7 +80,7 @@ class rpControll:
         self.distribution = None
         self.spectrum = None
 
-        self.events_per_loop = None
+        self.set_size = None
 
         self.requested_count = 0
 
@@ -213,14 +213,17 @@ class rpControll:
 
     def start_oscillocsope(self):
         self.command(19, 0, 0)
+        
+    def set_set_size(self, set_size):
+        self.set_size = set_size
 
-    def acquire_set(self, amount):
-        buffer = np.zeros(amount * 2 * self.total_number_of_samples, dtype=np.int16)
+    def acquire_set(self):
+        buffer = np.zeros(self.set_size * 2 * self.total_number_of_samples, dtype=np.int16)
         view = buffer.view(np.uint8)
-        reshaped = buffer.reshape((2, self.total_number_of_samples, amount), order='F').transpose((2, 0, 1))
-        self.command(31, 0, amount)
+        reshaped = buffer.reshape((2, self.total_number_of_samples, self.set_size), order='F').transpose((2, 0, 1))
+        self.command(31, 0, self.set_size)
 
-        for i in range(amount):
+        for i in range(self.set_size):
             bytes_received = 0
             while bytes_received < self.osc_bytes:
                 bytes_received += self.socket.recv_into(
@@ -233,13 +236,13 @@ class rpControll:
 
         return reshaped
 
-    def acquire_single(self, set_size):
+    def acquire_single(self):
         while True:
             buffer = np.zeros(2 * self.total_number_of_samples, dtype=np.int16)
             view = buffer.view(np.uint8)
             reshaped = buffer.reshape((2, self.total_number_of_samples), order='F')
-            self.command(31, 0, set_size)
-            for i in range(set_size):
+            self.command(31, 0, self.set_size)
+            for i in range(self.set_size):
                 bytes_received = 0
                 while bytes_received < self.osc_bytes:
                     bytes_received += self.socket.recv_into(view[bytes_received:], self.osc_bytes - bytes_received)
@@ -273,6 +276,8 @@ class rpControll:
 
         self.set_generator_spectrum(np.load("generators/comb.npy"))
         self.start_generator()
+        
+        self.set_set_size(1000)
 
         self.reset_oscilloscope()
         self.start_oscillocsope()
