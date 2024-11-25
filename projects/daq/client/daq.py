@@ -292,7 +292,6 @@ if __name__ == "__main__":
     parser.add_argument('mode', type=str, help='Acquisition mode', choices=ACQUISITION_MODES)
 
     # Optional arguments
-    parser.add_argument('--set_size', type=int, help='Size of one dataset to be acquired', default=1000)
     parser.add_argument('--sets', type=int, help='Amount of sets to acquire if mode is "process"', default=10)
     args = parser.parse_args()
 
@@ -304,7 +303,7 @@ if __name__ == "__main__":
     if args.mode == 'save':
         print("Starting acquisition")
         start_time = time.time()
-        np.save("data.npy", rp.acquire_set(args.set_size))
+        np.save("data.npy", rp.acquire_set())
         stop_time = time.time()
 
         print(f"Acquired {args.set_size} events at an average rate of {args.set_size/(stop_time-start_time)} Hz")
@@ -316,7 +315,7 @@ if __name__ == "__main__":
         hist = np.zeros(2**13)
         total_sets = args.set_size * args.sets
 
-        generator = rp.acquire_single(1000)
+        generator = rp.acquire_single()
 
         start_time = time.time()
         for i in range(total_sets):
