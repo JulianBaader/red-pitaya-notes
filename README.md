@@ -1,12 +1,4 @@
-# Loading the Image:
-You can either follow *Updating the Image* or *Copying the Image*
-
-## Copying the Image:
-Unpack the `RP_Image.tar.gz` file and copy it's contents onto the SD card.
-
-Insert the SD card into the RP and power it.
-
-## Updating the Image:
+# Updating the Image:
 
 Download the SD card image zip file according to https://pavel-demin.github.io/red-pitaya-notes/alpine/
 
