@@ -213,7 +213,7 @@ class rpControll:
 
     def start_oscillocsope(self):
         self.command(19, 0, 0)
-        
+
     def set_set_size(self, set_size):
         self.set_size = set_size
 
@@ -276,7 +276,7 @@ class rpControll:
 
         self.set_generator_spectrum(np.load("generators/comb.npy"))
         self.start_generator()
-        
+
         self.set_set_size(1000)
 
         self.reset_oscilloscope()
