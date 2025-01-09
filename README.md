@@ -27,8 +27,10 @@ Make the SD card read only `ro`.
 Connect IN1 to OUT1.
 
 Start the server:
-- If you followed Updating the Image, you can do that by running the `SSH/apps/daq/start.sh` script or by the browser.
-- If you copied the Image from this repo, the server will start automatically and is ready once the blue LED is on.
+- `SSH/apps/daq/start.sh` script
+- Via the Browser
+- By copying the start.sh script into the toplevel directory of the SD-Card
+
 
 Navigate to `repo/projects/daq/client`.
 
