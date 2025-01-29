@@ -32,7 +32,6 @@ void *pulser_handler(void *arg);
 
 //added daq variables
 int daq_count = 0;
-int drain_daq = 0;
 int active_daq_thread = 0;
 void *daq_handler(void *arg);
 
@@ -638,11 +637,11 @@ void *daq_handler(void *arg)
   while(daq_count>0)
   {
     uint8_t trigger_byte = ((uint8_t *)sts)[32];
-    if ((trigger_byte % 2 == 0) || drain_daq) // trigger_byte is even once a trigger event was recorded. If drain_daq just write the data to the socket
+    if (trigger_byte % 2 == 0) // trigger_byte is even once a trigger event was recorded.
     {
       // read oscilloscope data 
-      pre = *(uint32_t *)(cfg + 76) + 1;
-      tot = *(uint32_t *)(cfg + 80) + 1; //das müsste einmal reichen
+      pre = *(uint32_t *)(cfg + 76) + 1; // Maybe do this before the while loop
+      tot = *(uint32_t *)(cfg + 80) + 1; // Maybe do this before the while loop
       start = *(uint32_t *)(sts + 32) >> 1;
       start = (start - pre) & 0x007FFFFF;
       if(start + tot <= 0x007FFFFF)
@@ -664,6 +663,5 @@ void *daq_handler(void *arg)
     }
   }
   active_daq_thread = 0;
-  drain_daq = 0;
   return NULL;
 }
